@@ -24,8 +24,7 @@ process_url_clicked = st.sidebar.button("Process URLs")
 file_path = "faiss_store_openai.pkl"
 
 main_placeholder = st.empty()
-openai_api_key = os.getenv('OPENAI_API_KEY')
-llm = OpenAI(api_key=openai_api_key,temperature=0.9, max_tokens=500)
+llm = OpenAI(temperature=0.9, max_tokens=500)
 
 if process_url_clicked:
     # load data
@@ -40,7 +39,7 @@ if process_url_clicked:
     main_placeholder.text("Text Splitter...Started...✅✅✅")
     docs = text_splitter.split_documents(data)
     # create embeddings and save it to FAISS index
-    embeddings = OpenAIEmbeddings(model="gpt-3.5-turbo")
+    embeddings = OpenAIEmbeddings()
     vectorstore_openai = FAISS.from_documents(docs, embeddings)
     # Save the FAISS index to a pickle file
     vectorstore_openai.save_local("faiss_index")
@@ -51,8 +50,8 @@ if process_url_clicked:
 
 query = main_placeholder.text_input("Question: ")
 if query:
-    embeddings = OpenAIEmbeddings(model="gpt-3.5-turbo")
-    vectorstore = FAISS.load_local("faiss_index", embeddings)
+    embeddings = OpenAIEmbeddings()
+    vectorstore = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
     chain = RetrievalQAWithSourcesChain.from_llm(llm=llm, retriever=vectorstore.as_retriever())
     result = chain({"question": query}, return_only_outputs=True)
     # result will be a dictionary of this format --> {"answer": "", "sources": [] }
