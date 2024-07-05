@@ -20,10 +20,9 @@ for i in range(3):
 
 process_url_clicked = st.sidebar.button("Process URLs")
 file_path = "faiss_store_openai.pkl"
-api_key__=st.secrets["api_key"]
-print(api_key)
+key=st.secrets["api_key"]
 main_placeholder = st.empty()
-llm = OpenAI(api_key=api_key__,temperature=0.9, max_tokens=500)
+llm = OpenAI(api_key=key,temperature=0.9, max_tokens=500)
 
 if process_url_clicked:
     # load data
