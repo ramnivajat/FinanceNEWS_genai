@@ -8,10 +8,10 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.document_loaders import UnstructuredURLLoader
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
-
+import api
 from dotenv import load_dotenv
 from dotenv import load_dotenv
-load_dotenv()
+api_key=api.OPENAI_API_KEY
 st.title("RockyBot: News Research Tool 📈")
 st.sidebar.title("News Article URLs")
 
@@ -24,7 +24,7 @@ process_url_clicked = st.sidebar.button("Process URLs")
 file_path = "faiss_store_openai.pkl"
 
 main_placeholder = st.empty()
-llm = OpenAI(temperature=0.9, max_tokens=500)
+llm = OpenAI(api_key=api_key,temperature=0.9, max_tokens=500)
 
 if process_url_clicked:
     # load data
