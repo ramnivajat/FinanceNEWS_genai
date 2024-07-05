@@ -3,8 +3,8 @@ python-dotenv
 streamlit
 unstructured
 libmagic
+faiss-cpu
+tiktoken
 python-magic
 python-magic-bin
 OpenAI 
-faiss-cpu
-tiktoken
