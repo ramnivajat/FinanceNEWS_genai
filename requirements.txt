@@ -1,3 +1,4 @@
+--upgrade pip
 langchain
 python-dotenv
 streamlit
@@ -6,3 +7,6 @@ libmagic
 python-magic
 python-magic-bin
 OpenAI 
+langchain community
+faiss-cpu
+tiktoken
