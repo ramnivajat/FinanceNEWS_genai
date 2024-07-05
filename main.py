@@ -49,7 +49,7 @@ if process_url_clicked:
 query = main_placeholder.text_input("Question: ")
 if query:
     embeddings = OpenAIEmbeddings()
-    vectorstore = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
+    vectorstore = FAISS.load_local("faiss_index", embeddings)
     chain = RetrievalQAWithSourcesChain.from_llm(llm=llm, retriever=vectorstore.as_retriever())
     result = chain({"question": query}, return_only_outputs=True)
     # result will be a dictionary of this format --> {"answer": "", "sources": [] }
