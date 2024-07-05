@@ -11,7 +11,7 @@ from langchain.vectorstores import FAISS
 
 from dotenv import load_dotenv
 load_dotenv()  # take environment variables from .env (especially openai api key)
-
+api_key = os.getenv('OPENAI_API_KEY')
 st.title("RockyBot: News Research Tool 📈")
 st.sidebar.title("News Article URLs")
 
@@ -24,7 +24,7 @@ process_url_clicked = st.sidebar.button("Process URLs")
 file_path = "faiss_store_openai.pkl"
 
 main_placeholder = st.empty()
-llm = OpenAI(api_key=os.getenv('OPENAI_API_KEY'),temperature=0.9, max_tokens=500)
+llm = OpenAI(api_key=api_key,temperature=0.9, max_tokens=500)
 
 if process_url_clicked:
     # load data
