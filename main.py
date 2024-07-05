@@ -8,7 +8,6 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.document_loaders import UnstructuredURLLoader
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
-import api
 from dotenv import load_dotenv
 # Load environment variables from .env
 st.title("RockyBot: News Research Tool 📈")
