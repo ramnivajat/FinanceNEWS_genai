@@ -11,7 +11,7 @@ from langchain.vectorstores import FAISS
 from dotenv import load_dotenv
 # Load environment variables from .env
 os.environ['OPENAI_API_KEY'] = st.secrets["api_key"]
-st.title("RockyBot: News Research Tool 📈")
+st.title("News Research Tool 📈")
 st.sidebar.title("News Article URLs")
 
 urls = []
