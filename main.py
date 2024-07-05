@@ -39,7 +39,7 @@ if process_url_clicked:
     main_placeholder.text("Text Splitter...Started...✅✅✅")
     docs = text_splitter.split_documents(data)
     # create embeddings and save it to FAISS index
-    embeddings = OpenAIEmbeddings(model="text-embedding-ada-002")
+    embeddings = OpenAIEmbeddings(model="gpt-3.5-turbo")
     vectorstore_openai = FAISS.from_documents(docs, embeddings)
     # Save the FAISS index to a pickle file
     vectorstore_openai.save_local("faiss_index")
@@ -50,7 +50,7 @@ if process_url_clicked:
 
 query = main_placeholder.text_input("Question: ")
 if query:
-    embeddings = OpenAIEmbeddings(model="text-embedding-ada-002")
+    embeddings = OpenAIEmbeddings(model="gpt-3.5-turbo")
     vectorstore = FAISS.load_local("faiss_index", embeddings)
     chain = RetrievalQAWithSourcesChain.from_llm(llm=llm, retriever=vectorstore.as_retriever())
     result = chain({"question": query}, return_only_outputs=True)
