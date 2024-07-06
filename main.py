@@ -15,10 +15,8 @@ load_dotenv()  # take environment variables from .env (especially openai api key
 st.title("RockyBot: News Research Tool 📈")
 st.sidebar.title("News Article URLs")
 
-# Allow dynamic addition of URLs
 urls = []
-num_urls = st.sidebar.number_input("Number of URLs", min_value=1, max_value=10, value=3)
-for i in range(num_urls):
+for i in range(3):
     url = st.sidebar.text_input(f"URL {i+1}")
     urls.append(url)
 
