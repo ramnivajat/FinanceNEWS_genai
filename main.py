@@ -14,49 +14,92 @@ os.environ['OPENAI_API_KEY'] = st.secrets["api_key"]
 st.title("News Research Tool 📈")
 st.sidebar.title("News Article URLs")
 
-urls = []
-for i in range(3):
-    url = st.sidebar.text_input(f"URL {i+1}")
-    urls.append(url)
+# Function to validate URLs
+def validate_url(url):
+    return validators.url(url)
 
+# Allow dynamic addition of URLs
+urls = []
+num_urls = st.sidebar.number_input("Number of URLs", min_value=1, max_value=10, value=3)
+for i in range(num_urls):
+    url = st.sidebar.text_input(f"URL {i+1}")
+    if url and validate_url(url):
+        urls.append(url)
+    elif url:
+        st.sidebar.error(f"URL {i+1} is invalid.")
+
+# Progress bar and status messages
+progress_bar = st.sidebar.progress(0)
+status_text = st.sidebar.empty()
+
+# Summarization pipeline
+summarizer = pipeline("summarization")
+
+# Load OpenAI API key from environment variable
+openai_api_key = os.getenv("OPENAI_API_KEY")
+if not openai_api_key:
+    st.error("OpenAI API key not found. Please set it in the .env file.")
+    st.stop()
+
+# Initialize OpenAI LLM
+llm = OpenAI(temperature=0.9, max_tokens=1000, api_key=openai_api_key)
+
+# Asynchronous function to process URLs
+async def process_urls_async(urls):
+    loader = UnstructuredURLLoader(urls=urls)
+    status_text.text("Loading data...")
+    data = await loader.load_async()
+    return data
+
+# Main processing button
 process_url_clicked = st.sidebar.button("Process URLs")
 file_path = "faiss_store_openai.pkl"
-main_placeholder = st.empty()
-llm = OpenAI(temperature=0.9, model='gpt-3.5-turbo-instruct',  max_tokens=500)
 
 if process_url_clicked:
-    # load data
-    loader = UnstructuredURLLoader(urls=urls)
-    main_placeholder.text("Data Loading...Started...✅✅✅")
-    data = loader.load()
-    # split data
-    text_splitter = RecursiveCharacterTextSplitter(
-        separators=['\n\n', '\n', '.', ','],
-        chunk_size=1000
-    )
-    main_placeholder.text("Text Splitter...Started...✅✅✅")
-    docs = text_splitter.split_documents(data)
-    # create embeddings and save it to FAISS index
-    embeddings = OpenAIEmbeddings()
-    vectorstore_openai = FAISS.from_documents(docs, embeddings)
-    # Save the FAISS index to a pickle file
-    vectorstore_openai.save_local("faiss_index")
-    main_placeholder.text("Embedding Vector Started Building...✅✅✅")
-    time.sleep(2)
+    if not urls:
+        st.sidebar.error("Please enter at least one valid URL.")
+    else:
+        # Load data asynchronously
+        data = asyncio.run(process_urls_async(urls))
+        progress_bar.progress(30)
+        status_text.text("Data loading complete. Splitting text...")
 
-    
+        # Split data into chunks
+        text_splitter = RecursiveCharacterTextSplitter(
+            separators=['\n\n', '\n', '.', ','],
+            chunk_size=10000,
+            chunk_overlap=1000
+        )
+        docs = text_splitter.split_documents(data)
+        progress_bar.progress(60)
 
-query = main_placeholder.text_input("Question: ")
+        # Display summaries
+        st.subheader("Summaries of Articles")
+        for doc in docs:
+            summary = summarizer(doc['content'], max_length=150, min_length=30, do_sample=False)[0]['summary_text']
+            st.write(summary)
+
+        # Create embeddings and save to FAISS index
+        status_text.text("Building embeddings...")
+        embeddings = OpenAIEmbeddings(api_key=openai_api_key)
+        vectorstore_openai = FAISS.from_documents(docs, embeddings)
+        vectorstore_openai.save_local("faiss_index")
+        progress_bar.progress(100)
+        status_text.text("Embedding vector built successfully.")
+
+# Query input and processing
+query = st.text_input("Question: ")
 if query:
-    embeddings = OpenAIEmbeddings()
-    vectorstore = FAISS.load_local("faiss_index", embeddings)
+    embeddings = OpenAIEmbeddings(api_key=openai_api_key)
+    vectorstore = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
     chain = RetrievalQAWithSourcesChain.from_llm(llm=llm, retriever=vectorstore.as_retriever())
     result = chain({"question": query}, return_only_outputs=True)
-    # result will be a dictionary of this format --> {"answer": "", "sources": [] }
+
+    # Display answer
     st.header("Answer")
     st.write(result["answer"])
 
-    # Display sources, if available
+    # Display sources
     sources = result.get("sources", "")
     if sources:
         st.subheader("Sources:")
