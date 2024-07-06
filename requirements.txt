@@ -10,3 +10,4 @@ OpenAI == 0.28.0
 validators
 asyncio
 transformers
+TensorFlow
