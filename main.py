@@ -12,6 +12,7 @@ from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
 from transformers import pipeline
 from dotenv import load_dotenv
+import tensorflow as tf
 # Load environment variables from .env
 os.environ['OPENAI_API_KEY'] = st.secrets["api_key"]
 st.title("News Research Tool 📈")
