@@ -36,7 +36,7 @@ progress_bar = st.sidebar.progress(0)
 status_text = st.sidebar.empty()
 
 # Summarization pipeline
-summarizer = pipeline("summarization")
+summarizer = pipeline("summarization", framework="tf") 
 
 # Load OpenAI API key from environment variable
 openai_api_key = os.getenv("OPENAI_API_KEY")
