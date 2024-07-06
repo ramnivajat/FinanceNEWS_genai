@@ -2,12 +2,15 @@ import os
 import streamlit as st
 import joblib
 import time
+import validators
+import asyncio
 from langchain import OpenAI
 from langchain.chains import RetrievalQAWithSourcesChain
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.document_loaders import UnstructuredURLLoader
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
+from transformers import pipeline
 from dotenv import load_dotenv
 # Load environment variables from .env
 os.environ['OPENAI_API_KEY'] = st.secrets["api_key"]
