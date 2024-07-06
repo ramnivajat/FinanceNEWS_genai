@@ -1,13 +1,16 @@
 import os
 import streamlit as st
-import joblib
-import time
 from langchain import OpenAI
 from langchain.chains import RetrievalQAWithSourcesChain
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.document_loaders import UnstructuredURLLoader
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
+from langchain.chains.question_answering import load_qa_chain
+from dotenv import load_dotenv
+from PyPDF2 import PdfReader
+from langchain.prompts import PromptTemplate
+from langchain.schema import Document
 
 from dotenv import load_dotenv
 os.environ['OPENAI_API_KEY'] = st.secrets["api_key"]
