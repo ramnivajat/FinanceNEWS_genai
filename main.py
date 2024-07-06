@@ -13,60 +13,97 @@ from dotenv import load_dotenv
 os.environ['OPENAI_API_KEY'] = st.secrets["api_key"]
 
 
-st.title("News Research Tool 📈")
-st.sidebar.title("News Article URLs")
+def get_pdf_text(pdf_docs):
+    text = ""
+    for pdf in pdf_docs:
+        pdf_reader = PdfReader(pdf)
+        for page in pdf_reader.pages:
+            text += page.extract_text()
+    return text
 
-urls = []
-for i in range(3):
-    url = st.sidebar.text_input(f"URL {i+1}")
-    urls.append(url)
-
-process_url_clicked = st.sidebar.button("Process URLs")
-file_path = "faiss_store_openai.pkl"
-
-main_placeholder = st.empty()
-llm = OpenAI(api_key=os.getenv('OPENAI_API_KEY'),model='gpt-3.5-turbo-instruct',temperature=0.9, max_tokens=1000)
-
-if process_url_clicked:
-    # load data
+def get_url_text(urls):
     loader = UnstructuredURLLoader(urls=urls)
-    main_placeholder.text("Data Loading...Started...✅✅✅")
     data = loader.load()
-    # split data
-    text_splitter = RecursiveCharacterTextSplitter(
-        separators=['\n\n', '\n', '.', ','],
-        chunk_size=1000
-    )
-    main_placeholder.text("Text Splitter...Started...✅✅✅")
-    docs = text_splitter.split_documents(data)
-    # create embeddings and save it to FAISS index
+    text = "\n".join([doc.page_content for doc in data])
+    return text
+
+def get_text_chunks(text):
+    # Reduce chunk size to avoid exceeding the token limit
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=500)
+    chunks = text_splitter.split_text(text)
+    return chunks
+
+def get_vector_store(text_chunks):
     embeddings = OpenAIEmbeddings()
+    docs = [Document(page_content=chunk) for chunk in text_chunks]
     vectorstore_openai = FAISS.from_documents(docs, embeddings)
-    # Save the FAISS index to a pickle file
     vectorstore_openai.save_local("faiss_index")
-    main_placeholder.text("Embedding Vector Started Building...✅✅✅")
-    time.sleep(2)
 
-    
+def get_conversational_chain():
+    prompt_template = """
+    Answer the question as detailed as possible from the provided context, make sure to provide all the details. 
+    If the answer is not in the provided context just say, "answer is not available in the context", don't provide the wrong answer.
 
-query = main_placeholder.text_input("Question: ")
-if query:
+    Context:\n {context}\n
+    Question: \n{question}\n
+
+    Answer:
+    """
+
+    llm = OpenAI(api_key=os.getenv('OPENAI_API_KEY'), model='gpt-3.5-turbo-instruct', temperature=0.9, max_tokens=1000)
+
+    prompt = PromptTemplate(template=prompt_template, input_variables=["context", "question"])
+    chain = load_qa_chain(llm, chain_type="stuff", prompt=prompt)
+
+    return chain
+
+def user_input(user_question):
     embeddings = OpenAIEmbeddings()
-    vectorstore = FAISS.load_local("faiss_index", embeddings)
-    chain = RetrievalQAWithSourcesChain.from_llm(llm=llm, retriever=vectorstore.as_retriever())
-    result = chain({"question": query}, return_only_outputs=True)
-    # result will be a dictionary of this format --> {"answer": "", "sources": [] }
-    st.header("Answer")
-    st.write(result["answer"])
+    new_db = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
+    docs = new_db.similarity_search(user_question)
 
-    # Display sources, if available
-    sources = result.get("sources", "")
-    if sources:
-        st.subheader("Sources:")
-        sources_list = sources.split("\n")  # Split the sources by newline
-        for source in sources_list:
-            st.write(source)
+    # Ensure context length does not exceed token limit
+    context = ""
+    for doc in docs:
+        if len(context) + len(doc.page_content) <= 3000:  # Adjust this value as needed
+            context += doc.page_content + "\n"
 
+    chain = get_conversational_chain()
 
+    response = chain(
+        {"input_documents": [Document(page_content=context)], "question": user_question},
+        return_only_outputs=True
+    )
 
+    st.write("Reply: ", response["output_text"])
+
+def main():
+    st.set_page_config(page_title="Chat PDF and URL")
+    st.header("News Research Tool 📈")
+
+    user_question = st.text_input("Ask a Question from the given Files")
+
+    if user_question:
+        user_input(user_question)
+    
+    with st.sidebar:
+        st.title("Article URL and PDF")
+        pdf_docs = st.file_uploader("Upload your PDF Files", accept_multiple_files=True)
+        urls = []
+        for i in range(3):
+            url = st.text_input(f"URL {i+1}")
+            urls.append(url)
+        
+        if st.button("Submit & Process"):
+            with st.spinner("Processing..."):
+                pdf_text = get_pdf_text(pdf_docs) if pdf_docs else ""
+                url_text = get_url_text(urls) if any(urls) else ""
+                raw_text = pdf_text + url_text
+                
+                text_chunks = get_text_chunks(raw_text)
+                get_vector_store(text_chunks)
+                st.success("Done")   
+
+if __name__ == "__main__":
+    main()
 
