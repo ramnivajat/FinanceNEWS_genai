@@ -11,3 +11,4 @@ validators
 asyncio
 transformers
 TensorFlow
+torch 
