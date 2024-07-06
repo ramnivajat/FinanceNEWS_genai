@@ -62,7 +62,7 @@ def get_conversational_chain():
 
 def user_input(user_question):
     embeddings = OpenAIEmbeddings()
-    new_db = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
+    new_db = FAISS.load_local("faiss_index", embeddings)
     docs = new_db.similarity_search(user_question)
 
     # Ensure context length does not exceed token limit
