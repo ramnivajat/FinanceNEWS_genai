@@ -10,9 +10,10 @@ from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
 
 from dotenv import load_dotenv
-load_dotenv()  # take environment variables from .env (especially openai api key)
+os.environ['OPENAI_API_KEY'] = st.secrets["api_key"]
 
-st.title("RockyBot: News Research Tool 📈")
+
+st.title("News Research Tool 📈")
 st.sidebar.title("News Article URLs")
 
 urls = []
@@ -24,7 +25,7 @@ process_url_clicked = st.sidebar.button("Process URLs")
 file_path = "faiss_store_openai.pkl"
 
 main_placeholder = st.empty()
-llm = OpenAI(temperature=0.9, max_tokens=500)
+llm = OpenAI(api_key=os.getenv('OPENAI_API_KEY'),temperature=0.9, max_tokens=500)
 
 if process_url_clicked:
     # load data
