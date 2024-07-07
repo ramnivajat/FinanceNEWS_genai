@@ -12,9 +12,9 @@ from PyPDF2 import PdfReader
 from langchain.prompts import PromptTemplate
 from langchain.schema import Document
 
-from dotenv import load_dotenv
+# Load environment variables
+load_dotenv()
 os.environ['OPENAI_API_KEY'] = st.secrets["api_key"]
-
 
 def get_pdf_text(pdf_docs):
     text = ""
@@ -32,7 +32,7 @@ def get_url_text(urls):
 
 def get_text_chunks(text):
     # Reduce chunk size to avoid exceeding the token limit
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=500)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=500)
     chunks = text_splitter.split_text(text)
     return chunks
 
@@ -99,14 +99,23 @@ def main():
         
         if st.button("Submit & Process"):
             with st.spinner("Processing..."):
-                pdf_text = get_pdf_text(pdf_docs) 
-                url_text = get_url_text(urls) 
+                pdf_text = get_pdf_text(pdf_docs) if pdf_docs else ""
+                url_text = get_url_text(urls) if any(urls) else ""
+                
+                # Check if there is any text to process
+                if not pdf_text and not url_text:
+                    st.error("No content found in PDF or URLs")
+                    return
+                
                 raw_text = pdf_text + url_text
                 
                 text_chunks = get_text_chunks(raw_text)
+                if not text_chunks:
+                    st.error("Failed to split text into chunks")
+                    return
+                
                 get_vector_store(text_chunks)
                 st.success("Done")   
 
 if __name__ == "__main__":
     main()
-
