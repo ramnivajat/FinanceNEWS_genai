@@ -20,7 +20,11 @@ def get_pdf_text(pdf_docs):
     for pdf in pdf_docs:
         pdf_reader = PdfReader(pdf)
         for page in pdf_reader.pages:
-            text += page.extract_text()
+            extracted_text = page.extract_text()
+            if extracted_text:
+                text += extracted_text
+            else:
+                st.warning(f"No text found on page {pdf_reader.pages.index(page) + 1} of {pdf.name}")
     return text
 
 def get_url_text(urls):
@@ -107,6 +111,9 @@ def main():
             with st.spinner("Processing..."):
                 pdf_text = get_pdf_text(pdf_docs) if pdf_docs else ""
                 url_text = get_url_text(urls) if any(urls) else ""
+                
+                st.write(f"Extracted PDF text length: {len(pdf_text)}")
+                st.write(f"Extracted URL text length: {len(url_text)}")
                 
                 if not pdf_text and not url_text:
                     st.error("No text found in the provided PDFs or URLs.")
