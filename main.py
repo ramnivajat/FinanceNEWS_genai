@@ -12,9 +12,8 @@ from PyPDF2 import PdfReader
 from langchain.prompts import PromptTemplate
 from langchain.schema import Document
 
-from dotenv import load_dotenv
+# Load API key from environment variables
 os.environ['OPENAI_API_KEY'] = st.secrets["api_key"]
-
 
 def get_pdf_text(pdf_docs):
     text = ""
@@ -31,7 +30,6 @@ def get_url_text(urls):
     return text
 
 def get_text_chunks(text):
-    # Reduce chunk size to avoid exceeding the token limit
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=500)
     chunks = text_splitter.split_text(text)
     return chunks
@@ -39,6 +37,14 @@ def get_text_chunks(text):
 def get_vector_store(text_chunks):
     embeddings = OpenAIEmbeddings()
     docs = [Document(page_content=chunk) for chunk in text_chunks]
+    
+    # Debug statement to check the length of embeddings
+    for doc in docs:
+        print(f"Document length: {len(doc.page_content)}")
+
+    if not docs:
+        raise ValueError("No documents to index. Make sure there is content in the PDF or URLs.")
+    
     vectorstore_openai = FAISS.from_documents(docs, embeddings)
     vectorstore_openai.save_local("faiss_index")
 
@@ -101,12 +107,20 @@ def main():
             with st.spinner("Processing..."):
                 pdf_text = get_pdf_text(pdf_docs) if pdf_docs else ""
                 url_text = get_url_text(urls) if any(urls) else ""
-                raw_text = pdf_text + url_text
                 
+                if not pdf_text and not url_text:
+                    st.error("No text found in the provided PDFs or URLs.")
+                    return
+
+                raw_text = pdf_text + url_text
                 text_chunks = get_text_chunks(raw_text)
+                
+                if not text_chunks:
+                    st.error("No text chunks generated from the provided content.")
+                    return
+                
                 get_vector_store(text_chunks)
                 st.success("Done")   
 
 if __name__ == "__main__":
     main()
-
