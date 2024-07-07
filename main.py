@@ -19,15 +19,30 @@ os.environ['OPENAI_API_KEY'] = st.secrets["api_key"]
 def get_pdf_text(pdf_docs):
     text = ""
     for pdf in pdf_docs:
-        pdf_reader = PdfReader(pdf)
-        for page in pdf_reader.pages:
-            text += page.extract_text()
+        try:
+            pdf_reader = PdfReader(pdf)
+            for page in pdf_reader.pages:
+                page_text = page.extract_text()
+                if page_text:
+                    text += page_text
+                else:
+                    st.error(f"No text found on page {pdf_reader.pages.index(page) + 1} of {pdf.name}.")
+        except Exception as e:
+            st.error(f"Error reading {pdf.name}: {e}")
     return text
 
 def get_url_text(urls):
-    loader = UnstructuredURLLoader(urls=urls)
-    data = loader.load()
-    text = "\n".join([doc.page_content for doc in data])
+    text = ""
+    for url in urls:
+        if url:
+            try:
+                loader = UnstructuredURLLoader(urls=[url])
+                data = loader.load()
+                text += "\n".join([doc.page_content for doc in data if doc.page_content])
+            except Exception as e:
+                st.error(f"Error reading URL {url}: {e}")
+        else:
+            st.warning(f"Empty URL found and skipped.")
     return text
 
 def get_text_chunks(text):
@@ -101,6 +116,10 @@ def main():
             with st.spinner("Processing..."):
                 pdf_text = get_pdf_text(pdf_docs) if pdf_docs else ""
                 url_text = get_url_text(urls) if any(urls) else ""
+                
+                st.write(f"Extracted text from PDFs: {pdf_text[:500]}...")  # Displaying first 500 characters
+                st.write(f"Extracted text from URLs: {url_text[:500]}...")  # Displaying first 500 characters
+
                 raw_text = pdf_text + url_text
                 
                 if raw_text:
