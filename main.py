@@ -59,10 +59,6 @@ def get_text_chunks(text):
 def get_vector_store(text_chunks):
     embeddings = OpenAIEmbeddings()
     docs = [Document(page_content=chunk) for chunk in text_chunks]
-    
-    # Debug statement to check the length of embeddings
-    for doc in docs:
-        print(f"Document length: {len(doc.page_content)}")
 
     if not docs:
         raise ValueError("No documents to index. Make sure there is content in the PDF or URLs.")
