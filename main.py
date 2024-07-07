@@ -12,9 +12,9 @@ from PyPDF2 import PdfReader
 from langchain.prompts import PromptTemplate
 from langchain.schema import Document
 
-from dotenv import load_dotenv
+# Load environment variables
+load_dotenv()
 os.environ['OPENAI_API_KEY'] = st.secrets["api_key"]
-
 
 def get_pdf_text(pdf_docs):
     text = ""
@@ -32,15 +32,25 @@ def get_url_text(urls):
 
 def get_text_chunks(text):
     # Reduce chunk size to avoid exceeding the token limit
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=500)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=500)
     chunks = text_splitter.split_text(text)
     return chunks
 
 def get_vector_store(text_chunks):
+    if not text_chunks:
+        st.error("No text chunks available for generating embeddings.")
+        return
+    
     embeddings = OpenAIEmbeddings()
     docs = [Document(page_content=chunk) for chunk in text_chunks]
-    vectorstore_openai = FAISS.from_documents(docs, embeddings)
-    vectorstore_openai.save_local("faiss_index")
+    # Debug: Check the length of the text chunks and embeddings
+    st.write(f"Number of text chunks: {len(text_chunks)}")
+    
+    try:
+        vectorstore_openai = FAISS.from_documents(docs, embeddings)
+        vectorstore_openai.save_local("faiss_index")
+    except Exception as e:
+        st.error(f"Error generating vector store: {str(e)}")
 
 def get_conversational_chain():
     prompt_template = """
@@ -109,4 +119,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
