@@ -25,12 +25,21 @@ def get_pdf_text(pdf_docs):
                 text += extracted_text
             else:
                 st.warning(f"No text found on page {pdf_reader.pages.index(page) + 1} of {pdf.name}")
+    if not text:
+        st.error(f"No text extracted from the provided PDF files.")
     return text
 
 def get_url_text(urls):
     loader = UnstructuredURLLoader(urls=urls)
-    data = loader.load()
+    try:
+        data = loader.load()
+    except Exception as e:
+        st.error(f"Error loading URLs: {e}")
+        return ""
+    
     text = "\n".join([doc.page_content for doc in data])
+    if not text:
+        st.error("No text extracted from the provided URLs.")
     return text
 
 def get_text_chunks(text):
