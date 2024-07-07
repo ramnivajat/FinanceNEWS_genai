@@ -12,9 +12,9 @@ from PyPDF2 import PdfReader
 from langchain.prompts import PromptTemplate
 from langchain.schema import Document
 
-from dotenv import load_dotenv
+# Load environment variables
+load_dotenv()
 os.environ['OPENAI_API_KEY'] = st.secrets["api_key"]
-
 
 def get_pdf_text(pdf_docs):
     text = ""
@@ -31,16 +31,20 @@ def get_url_text(urls):
     return text
 
 def get_text_chunks(text):
-    # Reduce chunk size to avoid exceeding the token limit
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=500)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=500)
     chunks = text_splitter.split_text(text)
     return chunks
 
 def get_vector_store(text_chunks):
+    if not text_chunks:
+        st.error("No text chunks to process.")
+        return None
+    
     embeddings = OpenAIEmbeddings()
     docs = [Document(page_content=chunk) for chunk in text_chunks]
     vectorstore_openai = FAISS.from_documents(docs, embeddings)
     vectorstore_openai.save_local("faiss_index")
+    return vectorstore_openai
 
 def get_conversational_chain():
     prompt_template = """
@@ -52,12 +56,9 @@ def get_conversational_chain():
 
     Answer:
     """
-
     llm = OpenAI(api_key=os.getenv('OPENAI_API_KEY'), model='gpt-3.5-turbo-instruct', temperature=0.6, max_tokens=1000)
-
     prompt = PromptTemplate(template=prompt_template, input_variables=["context", "question"])
     chain = load_qa_chain(llm, chain_type="stuff", prompt=prompt)
-
     return chain
 
 def user_input(user_question):
@@ -65,10 +66,9 @@ def user_input(user_question):
     new_db = FAISS.load_local("faiss_index", embeddings)
     docs = new_db.similarity_search(user_question)
 
-    # Ensure context length does not exceed token limit
     context = ""
     for doc in docs:
-        if len(context) + len(doc.page_content) <= 3000:  # Adjust this value as needed
+        if len(context) + len(doc.page_content) <= 3000:
             context += doc.page_content + "\n"
 
     chain = get_conversational_chain()
@@ -103,10 +103,13 @@ def main():
                 url_text = get_url_text(urls) if any(urls) else ""
                 raw_text = pdf_text + url_text
                 
-                text_chunks = get_text_chunks(raw_text)
-                get_vector_store(text_chunks)
-                st.success("Done")   
+                if raw_text:
+                    text_chunks = get_text_chunks(raw_text)
+                    vector_store = get_vector_store(text_chunks)
+                    if vector_store:
+                        st.success("Done")
+                else:
+                    st.error("No text extracted from PDFs or URLs.") 
 
 if __name__ == "__main__":
     main()
-
