@@ -1,4 +1,5 @@
 import os
+import requests
 import streamlit as st
 from langchain import OpenAI
 from langchain.chains import RetrievalQAWithSourcesChain
@@ -30,14 +31,22 @@ def get_pdf_text(pdf_docs):
     return text
 
 def get_url_text(urls):
-    loader = UnstructuredURLLoader(urls=urls)
-    try:
-        data = loader.load()
-    except Exception as e:
-        st.error(f"Error loading URLs: {e}")
-        return ""
-    
-    text = "\n".join([doc.page_content for doc in data])
+    text = ""
+    for url in urls:
+        if url.strip() == "":
+            continue
+        try:
+            response = requests.get(url)
+            if response.status_code == 200:
+                content_type = response.headers.get('Content-Type', '')
+                if 'text/html' in content_type:
+                    text += response.text
+                else:
+                    st.warning(f"URL {url} did not return text/html content. Content-Type: {content_type}")
+            else:
+                st.warning(f"Failed to fetch URL {url}. Status code: {response.status_code}")
+        except Exception as e:
+            st.error(f"Error fetching URL {url}: {e}")
     if not text:
         st.error("No text extracted from the provided URLs.")
     return text
