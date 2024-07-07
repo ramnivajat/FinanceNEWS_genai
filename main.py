@@ -99,8 +99,8 @@ def main():
         
         if st.button("Submit & Process"):
             with st.spinner("Processing..."):
-                pdf_text = get_pdf_text(pdf_docs) if pdf_docs else ""
-                url_text = get_url_text(urls) if any(urls) else ""
+                pdf_text = get_pdf_text(pdf_docs) 
+                url_text = get_url_text(urls) 
                 raw_text = pdf_text + url_text
                 
                 text_chunks = get_text_chunks(raw_text)
