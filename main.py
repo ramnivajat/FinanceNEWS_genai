@@ -32,7 +32,7 @@ def get_url_text(urls):
 
 def get_text_chunks(text):
     # Reduce chunk size to avoid exceeding the token limit
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=500)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=500)
     chunks = text_splitter.split_text(text)
     return chunks
 
