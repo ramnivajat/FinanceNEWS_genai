@@ -53,7 +53,7 @@ def get_conversational_chain():
     Answer:
     """
 
-    llm = OpenAI(api_key=os.getenv('OPENAI_API_KEY'), model='gpt-3.5-turbo-instruct', temperature=0.7, max_tokens=100000)
+    llm = OpenAI(api_key=os.getenv('OPENAI_API_KEY'), model='gpt-3.5-turbo-instruct', temperature=0.7, max_tokens=10000)
 
     prompt = PromptTemplate(template=prompt_template, input_variables=["context", "question"])
     chain = load_qa_chain(llm, chain_type="stuff", prompt=prompt)
