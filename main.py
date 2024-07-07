@@ -29,6 +29,7 @@ def get_pdf_text(pdf_docs):
                     st.error(f"No text found on page {pdf_reader.pages.index(page) + 1} of {pdf.name}.")
         except Exception as e:
             st.error(f"Error reading {pdf.name}: {e}")
+    st.write(f"Extracted PDF Text Length: {len(text)}")
     return text
 
 def get_url_text(urls):
@@ -38,16 +39,22 @@ def get_url_text(urls):
             try:
                 loader = UnstructuredURLLoader(urls=[url])
                 data = loader.load()
-                text += "\n".join([doc.page_content for doc in data if doc.page_content])
+                url_text = "\n".join([doc.page_content for doc in data if doc.page_content])
+                if url_text:
+                    text += url_text
+                else:
+                    st.error(f"No text found for URL {url}.")
             except Exception as e:
                 st.error(f"Error reading URL {url}: {e}")
         else:
             st.warning(f"Empty URL found and skipped.")
+    st.write(f"Extracted URL Text Length: {len(text)}")
     return text
 
 def get_text_chunks(text):
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=500)
     chunks = text_splitter.split_text(text)
+    st.write(f"Number of Text Chunks: {len(chunks)}")
     return chunks
 
 def get_vector_store(text_chunks):
