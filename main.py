@@ -84,7 +84,7 @@ def user_input(user_question):
     """
     prompt = PromptTemplate(template=prompt_template, input_variables=["context", "question"])
     llm = OpenAI(api_key=os.getenv('OPENAI_API_KEY'), model='gpt-3.5-turbo-instruct', temperature=0.6, max_tokens=1000)
-    chain = RetrievalQAWithSourcesChain.from_llm(llm=llm, retriever=new_db.as_retriever(), prompt=prompt)
+    chain = RetrievalQAWithSourcesChain.from_llm(llm=llm, retriever=new_db.as_retriever())
     result = chain({"question": query}, return_only_outputs=True)
 
     st.write("Reply: ", result["answer"])
