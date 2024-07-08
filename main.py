@@ -103,6 +103,13 @@ def user_input(user_question):
     )
 
     st.write("Reply: ", response["output_text"])
+    # Display sources, if available
+    sources = result.get("sources", "")
+    if sources:
+        st.subheader("Sources:")
+        sources_list = sources.split("\n")  # Split the sources by newline
+        for source in sources_list:
+            st.write(source)
 
 def main():
     st.set_page_config(page_title="Chat PDF and URL")
