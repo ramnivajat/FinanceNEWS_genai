@@ -87,7 +87,7 @@ def user_input(user_question):
     chain = RetrievalQAWithSourcesChain.from_llm(llm=llm, retriever=new_db.as_retriever(), prompt=prompt)
     result = chain({"question": query}, return_only_outputs=True)
 
-    st.write("Reply: ", result[""answer""])
+    st.write("Reply: ", result["answer"])
     # Display sources, if available
     sources = result.get("sources", "")
     if sources:
