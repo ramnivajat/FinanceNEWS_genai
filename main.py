@@ -1,3 +1,5 @@
+
+
 import os
 import requests
 import streamlit as st
@@ -66,13 +68,7 @@ def get_vector_store(text_chunks):
     vectorstore_openai = FAISS.from_documents(docs, embeddings)
     vectorstore_openai.save_local("faiss_index")
 
-
-
-def user_input(user_question):
-    embeddings = OpenAIEmbeddings()
-    new_db = FAISS.load_local("faiss_index", embeddings)
-    docs = new_db.similarity_search(user_question)
-    
+def get_conversational_chain():
     prompt_template = """
     Answer the question as detailed as possible from the provided context, make sure to provide all the details. 
     If the answer is not in the provided context just say, "answer is not available in the context", don't provide the wrong answer.
@@ -82,14 +78,35 @@ def user_input(user_question):
 
     Answer:
     """
-    prompt = PromptTemplate(template=prompt_template, input_variables=["context", "question"])
-    llm = OpenAI(api_key=os.getenv('OPENAI_API_KEY'), model='gpt-3.5-turbo-instruct', temperature=0.6, max_tokens=1000)
-    chain = RetrievalQAWithSourcesChain.from_llm(llm=llm, retriever=new_db.as_retriever())
-    result = chain({"question": user_question}, return_only_outputs=True)
 
-    st.write("Reply: ", result["answer"])
+    llm = OpenAI(api_key=os.getenv('OPENAI_API_KEY'), model='gpt-3.5-turbo-instruct', temperature=0.6, max_tokens=1000)
+
+    prompt = PromptTemplate(template=prompt_template, input_variables=["context", "question"])
+    chain = load_qa_chain(llm, chain_type="stuff", prompt=prompt)
+
+    return chain
+
+def user_input(user_question):
+    embeddings = OpenAIEmbeddings()
+    new_db = FAISS.load_local("faiss_index", embeddings)
+    docs = new_db.similarity_search(user_question)
+
+    # Ensure context length does not exceed token limit
+    context = ""
+    for doc in docs:
+        if len(context) + len(doc.page_content) <= 3000:  # Adjust this value as needed
+            context += doc.page_content + "\n"
+
+    chain = get_conversational_chain()
+
+    response = chain(
+        {"input_documents": [Document(page_content=context)], "question": user_question},
+        return_only_outputs=True
+    )
+
+    st.write("Reply: ", response["output_text"])
     # Display sources, if available
-    sources = result.get("sources", "")
+    sources = response.get("sources", "")
     if sources:
         st.subheader("Sources:")
         sources_list = sources.split("\n")  # Split the sources by newline
